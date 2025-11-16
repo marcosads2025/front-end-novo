@@ -25,7 +25,9 @@ const DogTable = ({
   nextPage,
   goToPage,
   itemsPerPage,
-  setItemsPerPage
+  setItemsPerPage,
+  setAppointmentDate,
+  setEditData
 }) => {
   return (
     <>
