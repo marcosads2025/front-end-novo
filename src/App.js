@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './Home';
 import Cadastro from './Cadastro';
+import ListaDogs from './ListaDogs';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/lista" element={<ListaDogs />} />
           </Routes>
         </main>
 

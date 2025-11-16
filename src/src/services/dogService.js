@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // A URL base da sua API (Back-end)
 // Certifique-se de que esta é a URL correta do seu servidor Express
-const API_URL = 'http://localhost:3000/dogs';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_URL = `${BASE_URL}/api/dogs`;
 
 /**
  * Busca todos os cachorros cadastrados no banco de dados.
