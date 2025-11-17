@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import AuthScreen from "./components/AuthScreen";
 import DogTable from "./components/DogTable";

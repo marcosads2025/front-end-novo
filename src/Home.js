@@ -36,7 +36,7 @@ const Home = () => {
     };
 
     fetchDogs();
-  }, []);
+  }, [API_URL]);
 
   if (loading)
     return <div className="text-center mt-5 fs-4 text-secondary">Carregando...</div>;

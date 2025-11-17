@@ -21,8 +21,6 @@ const Modals = ({
   setZoom,
   handleZoom
 }) => {
-  const [localAppointmentDate, setLocalAppointmentDate] = useState('');
-
   const handleSchedule = () => {
     if (!schedulingDog || !appointmentDate) {
       alert("Por favor, selecione uma data válida.");
