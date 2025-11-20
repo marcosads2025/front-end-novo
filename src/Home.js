@@ -8,9 +8,11 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_URL = process.env.REACT_APP_API_URL
-    ? `${process.env.REACT_APP_API_URL}/api/dogs`
-    : "/api/dogs";
+  // 1. Definimos a URL base do Backend (Render)
+  const BASE_URL = process.env.REACT_APP_API_URL || "https://dog-api-1.onrender.com";
+  
+  // 2. URL da API para buscar os dados
+  const API_URL = `${BASE_URL}/api/dogs`;
 
   useEffect(() => {
     const fetchDogs = async () => {
@@ -38,6 +40,18 @@ const Home = () => {
     fetchDogs();
   }, [API_URL]);
 
+  // Função auxiliar para montar a URL da imagem corretamente
+  const getImageUrl = (path) => {
+    if (!path) return "";
+    // Se a imagem já tiver "http" (for um link externo), usa ela direto
+    if (path.startsWith("http")) return path;
+    
+    // Se não, monta o endereço do Render + a pasta uploads (se necessário)
+    // OBS: Verifique se no seu banco o path já vem com "uploads/" ou não.
+    // Se vier sem, use: return `${BASE_URL}/uploads/${path}`;
+    return `${BASE_URL}/${path}`; 
+  };
+
   if (loading)
     return <div className="text-center mt-5 fs-4 text-secondary">Carregando...</div>;
 
@@ -46,7 +60,7 @@ const Home = () => {
       style={{
         minHeight: "100vh",
         padding: "30px",
-        background: "#f5fdf8", // FUNDO NOVO SEM IMAGEM
+        background: "#f5fdf8",
       }}
     >
       {/* CABEÇALHO */}
@@ -109,17 +123,17 @@ const Home = () => {
             fontWeight: "500",
           }}
         >
-          📋 administrar cadastrados
+          📋 Administrar cadastrados
         </Link>
       </div>
 
       {error && (
         <div className="alert alert-danger text-center" style={{ fontSize: "1.1rem" }}>
-          Erro ao buscar os dados.
+          Erro ao buscar os dados. Verifique se o Backend está online.
         </div>
       )}
 
-      {dogs.length === 0 ? (
+      {dogs.length === 0 && !loading && !error ? (
         <div className="alert alert-info text-center" style={{ fontSize: "1.1rem" }}>
           Nenhum cachorro cadastrado ainda.
         </div>
@@ -136,12 +150,15 @@ const Home = () => {
                   background: "white",
                 }}
               >
+                {/* CORREÇÃO AQUI: Usando a função para buscar a imagem no Render */}
                 {dog.fotoUrl && (
                   <img
-                    src={dog.fotoUrl}
+                    src={getImageUrl(dog.fotoUrl)}
                     alt={dog.nome}
                     className="card-img-top"
                     style={{ height: "220px", objectFit: "cover" }}
+                    // Adicionei um tratamento de erro caso a imagem não exista
+                    onError={(e) => { e.target.src = "https://via.placeholder.com/300?text=Sem+Foto"; }}
                   />
                 )}
 
