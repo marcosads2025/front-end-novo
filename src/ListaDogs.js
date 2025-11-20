@@ -6,12 +6,17 @@ import DogFilters from "./components/DogFilters";
 import Modals from "./components/Modals";
 
 /**
- * ListaDogs.js (JS)
- * - Componente principal refatorado para usar componentes menores
- * - Lógica original mantida (API, PUT em JSON, agendamentos em localStorage)
- * - Adicionada função: cadastrar veterinário (localStorage)
+ * ListaDogs.js (CORRIGIDO)
+ * - URL apontando para o Render
+ * - saveEdit usando FormData (suporte a arquivos)
  */
 const ListaDogs = () => {
+  
+  // --- CORREÇÃO 1: DEFININDO A URL DO RENDER ---
+  // Isso garante que o frontend sempre busque os dados e imagens no lugar certo
+  const BASE_URL = "https://dog-api-1.onrender.com";
+  const API_URL = `${BASE_URL}/api/dogs`;
+
   /* ------------------- Autenticação CRMV ------------------- */
   const [crmv, setCrmv] = useState(() => localStorage.getItem("crmv") || "");
   const [crmvInput, setCrmvInput] = useState("");
@@ -83,7 +88,9 @@ const ListaDogs = () => {
   const [dogs, setDogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState(null); // Lógica original de edição inline
+  const [editingId, setEditingId] = useState(null);
+  
+  // Adicionei 'novaImagem' ao estado para caso você queira implementar upload na edição
   const [editData, setEditData] = useState({
     nome: "",
     raca: "",
@@ -91,7 +98,9 @@ const ListaDogs = () => {
     idade: "",
     proprietario: "",
     fotoUrl: "",
+    novaImagem: null // Campo para armazenar o arquivo novo se houver edição de foto
   });
+  
   const [saving, setSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [zoom, setZoom] = useState(1);
@@ -105,10 +114,10 @@ const ListaDogs = () => {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [comprovante, setComprovante] = useState(null);
 
-  // Menu de ações por linha (id do dog cujo menu está aberto)
+  // Menu de ações
   const [dogMenuOpen, setDogMenuOpen] = useState(null);
 
-  // Agendamentos locais persistidos
+  // Agendamentos locais
   const [appointments, setAppointments] = useState(() => {
     try {
       const raw = localStorage.getItem("dog_appointments_v1");
@@ -118,7 +127,6 @@ const ListaDogs = () => {
     }
   });
 
-  // *** NOVO ESTADO: Cachorro selecionado para o modal de detalhes ***
   const [viewingDog, setViewingDog] = useState(null);
 
   const saveAppointments = (list) => {
@@ -130,20 +138,18 @@ const ListaDogs = () => {
     }
   };
 
-  /* ------------------- API URL ------------------- */
-  const API_URL = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/dogs` : "/api/dogs";
-
   /* ------------------- Carregar dogs ------------------- */
   const loadDogs = async () => {
     try {
       setLoading(true);
       setError("");
+      // Usa a API_URL corrigida (Render)
       const res = await axios.get(API_URL);
       const data = res.data;
       setDogs(Array.isArray(data) ? data : data?.dogs || []);
     } catch (err) {
       console.error(err);
-      setError("Erro ao carregar cachorros (verifique backend).");
+      setError("Erro ao carregar cachorros (verifique se o backend no Render está ativo).");
       setDogs([]);
     } finally {
       setLoading(false);
@@ -155,7 +161,7 @@ const ListaDogs = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ------------------- Edição (PUT com JSON) - LÓGICA ORIGINAL MANTIDA ------------------- */
+  /* ------------------- Edição (CORRIGIDO PARA FORMDATA) ------------------- */
   const startEdit = (dog) => {
     setEditingId(dog._id);
     setEditData({
@@ -165,32 +171,53 @@ const ListaDogs = () => {
       idade: dog.idade ?? "",
       proprietario: dog.proprietario || "",
       fotoUrl: dog.fotoUrl || "",
+      novaImagem: null // Reseta a imagem nova
     });
     setDogMenuOpen(null);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditData({ nome: "", raca: "", peso: "", idade: "", proprietario: "", fotoUrl: "" });
+    setEditData({ nome: "", raca: "", peso: "", idade: "", proprietario: "", fotoUrl: "", novaImagem: null });
   };
 
   const saveEdit = async () => {
     if (!editingId) return;
     try {
       setSaving(true);
-      const res = await axios.put(`${API_URL}/${editingId}`, editData, {
-        headers: { "Content-Type": "application/json" },
+
+      // --- CORREÇÃO 2: Usando FormData para suportar envio de Arquivos e Texto ---
+      const formData = new FormData();
+      formData.append("nome", editData.nome);
+      formData.append("raca", editData.raca);
+      formData.append("peso", editData.peso);
+      formData.append("idade", editData.idade);
+      formData.append("proprietario", editData.proprietario);
+
+      // Se houver uma nova imagem selecionada no input de edição, anexa ela
+      if (editData.novaImagem) {
+         formData.append("imagem", editData.novaImagem);
+      }
+
+      // Importante: Não definimos 'Content-Type' manualmente aqui, o axios/browser faz isso
+      // ao detectar FormData, ou usamos explicitamente 'multipart/form-data'
+      const res = await axios.put(`${API_URL}/${editingId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+
       const updated = res.data;
+      
+      // Atualiza a lista localmente
       if (updated && updated._id) {
         setDogs((prev) => prev.map((d) => (d._id === editingId ? updated : d)));
       } else {
+        // Fallback caso a API não retorne o objeto completo
         setDogs((prev) => prev.map((d) => (d._id === editingId ? { ...d, ...editData } : d)));
       }
       cancelEdit();
     } catch (err) {
       console.error(err);
-      setError("Erro ao salvar alterações.");
+      setError("Erro ao salvar alterações. Verifique se todos os campos estão corretos.");
     } finally {
       setSaving(false);
     }
@@ -215,6 +242,7 @@ const ListaDogs = () => {
   const toggleVacinado = async (dog) => {
     try {
       const novo = !dog.vacinado;
+      // Toggle geralmente é leve, JSON funciona bem, mas a URL agora está correta (Render)
       const res = await axios.put(`${API_URL}/${dog._id}`, { vacinado: novo }, {
         headers: { "Content-Type": "application/json" }
       });
@@ -281,9 +309,6 @@ const ListaDogs = () => {
     setSortConfig({ key, direction: dir });
     setCurrentPage(1);
   };
-
-  // *** FUNÇÃO getSortIcon REMOVIDA ***
-  // const getSortIcon = (key) => { ... };
 
   const totalPages = Math.max(1, Math.ceil(sortedDogs.length / itemsPerPage));
   const currentTableData = useMemo(() => {
@@ -400,6 +425,8 @@ const ListaDogs = () => {
               setItemsPerPage={setItemsPerPage}
               setAppointmentDate={setAppointmentDate}
               setEditData={setEditData}
+              // --- CORREÇÃO 3: Passando a URL base para o componente de Tabela ---
+              baseUrl={BASE_URL} 
             />
           )}
         </div>
@@ -424,6 +451,8 @@ const ListaDogs = () => {
           zoom={zoom}
           setZoom={setZoom}
           handleZoom={handleZoom}
+          // --- CORREÇÃO 3: Passando a URL base para os Modais ---
+          baseUrl={BASE_URL}
         />
       </div>
     </div>
