@@ -15,13 +15,13 @@ const Cadastro = () => {
   const [foto, setFoto] = useState(null);
   const [preview, setPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(''); // Estado para mensagem de erro
-  const [success, setSuccess] = useState(''); // Estado para mensagem de sucesso
+  const [error, setError] = useState(''); 
+  const [success, setSuccess] = useState(''); 
   const [uploadProgress, setUploadProgress] = useState(0);
   const navigate = useNavigate();
   const isDirty = useRef(false);
 
-  const API_URL = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/dogs` : '/api/dogs';
+  const API_URL = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/dogs` : 'https://dog-api-1.onrender.com/api/dogs';
 
   // Previne perda de dados ao fechar/atualizar a página
   useEffect(() => {
@@ -62,7 +62,6 @@ const Cadastro = () => {
     for (const [key, value] of Object.entries(formData)) {
       if (!String(value || '').trim()) {
         setError(`Campo "${key}" é obrigatório.`);
-        // tenta focar no campo com o mesmo id
         const el = document.getElementById(key);
         if (el) el.focus();
         return false;
@@ -72,7 +71,7 @@ const Cadastro = () => {
       setError('Por favor, selecione uma foto.');
       return false;
     }
-    // validações adicionais sem alterar estrutura:
+    
     const pesoNum = Number(formData.peso);
     if (isNaN(pesoNum) || pesoNum <= 0) {
       setError('Peso inválido. Informe um número maior que 0.');
@@ -99,25 +98,41 @@ const Cadastro = () => {
 
     if (!validateForm()) return;
 
-    // Testa conexão simples ao backend (GET na rota base)
+    // Testa conexão simples ao backend
     try {
-      // se a API não responder, lançará
-      await axios.get(API_URL);
+      await axios.get(API_URL.replace('/api/dogs', '/')); // Tenta bater na raiz ou na API
     } catch (connErr) {
-      setError('Não foi possível conectar ao servidor. Verifique a API.');
-      return;
+      // Ignoramos erro de conexão aqui para tentar o POST mesmo assim, 
+      // mas o log ajuda a debugar
+      console.warn('Teste de conexão falhou, tentando envio mesmo assim...');
     }
 
+    // ============================================================
+    // CORREÇÃO AQUI: MAPEAMENTO MANUAL (PORTUGUÊS -> INGLÊS)
+    // ============================================================
     const dataToSend = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      dataToSend.append(key, value);
-    });
-    dataToSend.append('foto', foto);
+    
+    // Front-end (Português) -> Back-end (Inglês)
+    dataToSend.append('name', formData.nome);       // nome -> name
+    dataToSend.append('breed', formData.raca);      // raca -> breed
+    dataToSend.append('weight', formData.peso);     // peso -> weight
+    dataToSend.append('age', formData.idade);       // idade -> age
+    dataToSend.append('owner', formData.proprietario); // proprietario -> owner (se o banco usar 'owner')
+    
+    // Imagem
+    if (foto) {
+      dataToSend.append('image', foto); // foto -> image
+    }
 
     try {
       setSubmitting(true);
-      // upload com progresso
+      
+      // Envio
       await axios.post(API_URL, dataToSend, {
+        headers: {
+             // IMPORTANTE: Não defina 'Content-Type' aqui manualmente, 
+             // deixe o axios/browser definir o boundary do FormData
+        },
         onUploadProgress: (progressEvent) => {
           if (!progressEvent.total) return;
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -136,9 +151,9 @@ const Cadastro = () => {
         navigate('/');
       }, 1600);
     } catch (err) {
-      const serverMsg = err?.response?.data?.message || err?.message || '';
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || '';
       console.error('Erro ao cadastrar cachorro:', err);
-      setError(`Erro ao cadastrar. ${serverMsg ? `Detalhes: ${serverMsg}` : 'Verifique se o backend está rodando.'}`);
+      setError(`Erro ao cadastrar. ${serverMsg ? `Detalhes: ${JSON.stringify(serverMsg)}` : 'Verifique os dados.'}`);
     } finally {
       setSubmitting(false);
     }
@@ -164,7 +179,6 @@ const Cadastro = () => {
                     <span className="visually-hidden">Loading...</span>
                   </div>
 
-                  {/* barra de progresso visual (não altera estrutura do seu layout) */}
                   {uploadProgress > 0 && (
                     <div className="progress mt-3" style={{ height: '10px' }}>
                       <div
@@ -176,7 +190,6 @@ const Cadastro = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit}>
-                  {/* Campos do formulário (seu código original) */}
                   <div className="mb-3">
                     <label htmlFor="nome" className="form-label">Nome</label>
                     <input type="text" className="form-control" id="nome" name="nome" value={formData.nome} onChange={handleChange} required />
@@ -209,7 +222,6 @@ const Cadastro = () => {
                     )}
                   </div>
 
-                  {/* Mensagens de erro e sucesso */}
                   {error && <div className="alert alert-danger">{error}</div>}
                   {success && <div className="alert alert-success">{success}</div>}
                   
