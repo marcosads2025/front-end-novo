@@ -21,7 +21,12 @@ const Cadastro = () => {
   const navigate = useNavigate();
   const isDirty = useRef(false);
 
-  const API_URL = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api/dogs` : 'https://dog-api-1.onrender.com/api/dogs';
+  // --- CORREÇÃO AQUI ---
+  // Atualizei para a URL correta que apareceu no seu Log do Render (back-end-novo-1)
+  const API_URL = process.env.REACT_APP_API_URL 
+    ? `${process.env.REACT_APP_API_URL}/api/dogs` 
+    : 'https://back-end-novo-1.onrender.com/api/dogs';
+  // ---------------------
 
   // Previne perda de dados ao fechar/atualizar a página
   useEffect(() => {
@@ -100,28 +105,24 @@ const Cadastro = () => {
 
     // Testa conexão simples ao backend
     try {
-      await axios.get(API_URL.replace('/api/dogs', '/')); // Tenta bater na raiz ou na API
+      // Remove '/api/dogs' para testar apenas a raiz do servidor
+      const rootUrl = API_URL.replace('/api/dogs', '');
+      await axios.get(rootUrl); 
     } catch (connErr) {
-      // Ignoramos erro de conexão aqui para tentar o POST mesmo assim, 
-      // mas o log ajuda a debugar
-      console.warn('Teste de conexão falhou, tentando envio mesmo assim...');
+      console.warn('Teste de conexão falhou, tentando envio mesmo assim...', connErr);
     }
 
-    // ============================================================
-    // CORREÇÃO AQUI: MAPEAMENTO MANUAL (PORTUGUÊS -> INGLÊS)
-    // ============================================================
     const dataToSend = new FormData();
     
-    // Front-end (Português) -> Back-end (Inglês)
-    dataToSend.append('name', formData.nome);       // nome -> name
-    dataToSend.append('breed', formData.raca);      // raca -> breed
-    dataToSend.append('weight', formData.peso);     // peso -> weight
-    dataToSend.append('age', formData.idade);       // idade -> age
-    dataToSend.append('owner', formData.proprietario); // proprietario -> owner (se o banco usar 'owner')
+    // Mapeamento Front-end -> Back-end
+    dataToSend.append('name', formData.nome);       
+    dataToSend.append('breed', formData.raca);      
+    dataToSend.append('weight', formData.peso);     
+    dataToSend.append('age', formData.idade);       
+    dataToSend.append('owner', formData.proprietario); 
     
-    // Imagem
     if (foto) {
-      dataToSend.append('image', foto); // foto -> image
+      dataToSend.append('image', foto); 
     }
 
     try {
@@ -130,8 +131,7 @@ const Cadastro = () => {
       // Envio
       await axios.post(API_URL, dataToSend, {
         headers: {
-             // IMPORTANTE: Não defina 'Content-Type' aqui manualmente, 
-             // deixe o axios/browser definir o boundary do FormData
+             // Deixe o axios definir o Content-Type para multipart/form-data
         },
         onUploadProgress: (progressEvent) => {
           if (!progressEvent.total) return;
