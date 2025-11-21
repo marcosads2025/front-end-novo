@@ -21,12 +21,10 @@ const Cadastro = () => {
   const navigate = useNavigate();
   const isDirty = useRef(false);
 
-  // --- CORREÇÃO AQUI ---
-  // Atualizei para a URL correta que apareceu no seu Log do Render (back-end-novo-1)
-  const API_URL = process.env.REACT_APP_API_URL 
-    ? `${process.env.REACT_APP_API_URL}/api/dogs` 
-    : 'https://back-end-novo-1.onrender.com/api/dogs';
-  // ---------------------
+  // --- CORREÇÃO FEITA AQUI ---
+  // URL fixa e limpa, apontando para o back-end correto
+  const API_URL = 'https://back-end-novo-1.onrender.com/api/dogs';
+  // ---------------------------
 
   // Previne perda de dados ao fechar/atualizar a página
   useEffect(() => {
