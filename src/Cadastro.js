@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom';
 
 const Cadastro = () => {
   const initialFormState = {
-    name: '',
-    breed: '',
-    weight: '',
-    age: '',
-    owner: '',
+    nome: '',
+    raca: '',
+    peso: '',
+    idade: '',
+    proprietario: '',
   };
 
   const [formData, setFormData] = useState(initialFormState);
